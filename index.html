@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Script-type" content="text/javascript">
+<meta http-equiv="Content-Style-type" content="text/css">
+<script type="text/javascript" src="js/common.js" ></script>
+<script type="text/javascript" src="js/pitchfinder.js" ></script>
+<script type="text/javascript" src="js/fft.js" ></script>
+<title>getUserMedia(WebRTC) and Analyser(Web Audio API)</title>
+<style>
+	#piano{ position: relative;}
+	#piano1{
+		position: absolute;
+	}
+	#piano2{
+		position: absolute;
+	}
+</style>
+</head>
+<body>
+<audio id="audio" autoplay="autoplay"></audio>
+<canvas id="frequency"></canvas>
+<canvas id="timedomain"></canvas>
+
+
+<div>
+  <input type="button" name="source" value="mic" onclick="changeSourceMic();"> Microfone
+  <input type="button" name="source" value="osi" onclick="changeSourceOsi();"> Oscillator
+</div>
+
+<div>
+  <input type="radio" name="algo" value="YIN" checked="true"> YIN
+  <input type="radio" name="algo" value="DW"> DW
+  <input type="radio" name="algo" value="MPM"> MPM
+</div>
+
+<div id="display">
+ <div><span id="pitch">Hello.</span></div>
+ <div><span id="pitch_extent">Try your best pitch extent.</span></div>
+</div>
+
+<div id="piano">
+  <canvas id="piano1" width="1024" height="256"></canvas>
+  <canvas id="piano2" width="1024" height="256"></canvas>
+</div>
+
+
+</body>
+</html>
