@@ -6,6 +6,8 @@ var width = 1023;
 var height = 256;
 
 var audioContext = null;
+var sourceNode = null;
+var gainNode = null;
 
 var oct,
 	noteString,
@@ -20,7 +22,6 @@ var	minNote = 121;
 var	maxNote = 33;
 var rafID = null;
 
-var sourceNode = null;
 var PIANOCANVAS1 = null;
 var PIANOCANVAS2 = null;
 var prevNote = null;
@@ -128,8 +129,11 @@ function gotStream(stream) {
     sourceNode = audioContext.createMediaStreamSource(stream);
 
     // Connect it to the destination.
+    gainNode = audioContext.createGain();
+    gainNode.gain.value = 0.9;
+    sourceNode.connect(gainNode);
     analyser = audioContext.createAnalyser();
-    sourceNode.connect( analyser );
+    gainNode.connect( analyser );
 	analyser.connect( audioContext.destination );
     updatePitch();
 }
@@ -266,8 +270,11 @@ function updatePitch() {
 function changeSourceMic(){
 
 	sourceNode.stop(0);
-	sourceNode.disconnect( audioContext.destination);
+	analyser.disconnect( audioContext.destination);
+	sourceNode.disconnect(analyser);
 	sourceNode = null;
+	analyser = null;
+
 	if (!window.cancelAnimationFrame)
 		window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
 	window.cancelAnimationFrame( rafID );
@@ -277,8 +284,12 @@ function changeSourceMic(){
 
 function changeSourceOsi(){
 
-	sourceNode.disconnect( audioContext.destination);
+	analyser.disconnect( audioContext.destination);
+	gainNode.disconnect(analyser);
+	sourceNode.disconnect(gainNode);
 	sourceNode = null;
+	gainNode = null;
+	analyser = null;
 	if (!window.cancelAnimationFrame)
 		window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
 	window.cancelAnimationFrame( rafID );
