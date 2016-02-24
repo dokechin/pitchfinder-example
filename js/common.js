@@ -130,7 +130,7 @@ function gotStream(stream) {
 
     // Connect it to the destination.
     gainNode = audioContext.createGain();
-    gainNode.gain.value = 0.9;
+    gainNode.gain.value = 1.5;
     sourceNode.connect(gainNode);
     analyser = audioContext.createAnalyser();
     gainNode.connect( analyser );
