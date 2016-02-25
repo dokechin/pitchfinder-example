@@ -129,9 +129,26 @@ function gotStream(stream) {
     sourceNode = audioContext.createMediaStreamSource(stream);
 
     // Connect it to the destination.
-    gainNode = audioContext.createGain();
-    gainNode.gain.value = 1.5;
+//    gainNode = audioContext.createGain();
+//    gainNode.gain.value = 1.5;
+
+    gainNode = audioContext.createScriptProcessor(256, 2, 2);
+    gainNode.onaudioprocess = function(audioProcessingEvent) {
+        var input = audioProcessingEvent.inputBuffer;
+        var output = audioProcessingEvent.outputBuffer;
+
+        for(var channel = 0; channel < 2; channel++) {
+            var I = input.getChannelData(channel);
+            var O = output.getChannelData(channel);
+
+            for(var i = 0; i < input.length; i++) {
+                O[i] = I[i];
+                O[i] *= 2.0	;
+            }
+        }
+    }
     sourceNode.connect(gainNode);
+
     analyser = audioContext.createAnalyser();
     gainNode.connect( analyser );
 	analyser.connect( audioContext.destination );
