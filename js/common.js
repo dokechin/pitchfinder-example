@@ -43,7 +43,7 @@ var	frequencyElement = null;
 var	timeDomainElement = null;
 var	pitchExtentElem = null;
 var	pitchElem = null;
-var gain_value = 1.5;
+var gain_value = 2.5;
 
 function initialize(){
 
