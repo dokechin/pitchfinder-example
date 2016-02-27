@@ -43,6 +43,7 @@ var	frequencyElement = null;
 var	timeDomainElement = null;
 var	pitchExtentElem = null;
 var	pitchElem = null;
+var gain_value = 1.5;
 
 function initialize(){
 
@@ -143,7 +144,7 @@ function gotStream(stream) {
 
             for(var i = 0; i < input.length; i++) {
                 O[i] = I[i];
-                O[i] *= 2.0	;
+                O[i] *= gain_value;
             }
         }
     }
@@ -283,6 +284,9 @@ function updatePitch() {
 
 	animation();
 
+}
+function changeGain(){
+  gain_value = document.querySelector('input[name="gain_value"]').value;
 }
 function changeSourceMic(){
 

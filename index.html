@@ -29,6 +29,8 @@
   <input type="button" name="source" value="osi" onclick="changeSourceOsi();"> Oscillator
 </div>
 
+<input id="gain_value" type="range" min="0" max="3" step="0.1" onchange="changeGain()"/>
+
 <div>
   <input type="radio" name="algo" value="YIN" checked="true"> YIN
   <input type="radio" name="algo" value="DW"> DW
