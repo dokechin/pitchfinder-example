@@ -47,6 +47,11 @@ var gain_value = 2.5;
 
 function initialize(){
 
+    var gainElm = document.querySelector('input[id="gain_value"]');
+    gainElm.addEventListener("change", function() {
+      gain_value = document.querySelector('input[name="gain_value"]').value;
+    }, false);
+
 	audioContext = new AudioContext();
 
 	audioElement = document.getElementById("audio");
@@ -284,9 +289,6 @@ function updatePitch() {
 
 	animation();
 
-}
-function changeGain(){
-  gain_value = document.querySelector('input[name="gain_value"]').value;
 }
 function changeSourceMic(){
 
