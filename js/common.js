@@ -36,14 +36,38 @@ var DWDetector = null;
 var MPMDetector = null;
 var	frequencyContext = null;
 var	timeDomainContext = null;
+var	nsdfContext = null;
 var estimate = null;
 
 var	audioElement = null;
 var	frequencyElement = null;
 var	timeDomainElement = null;
+var	nsdfElement = null;
 var	pitchExtentElem = null;
 var	pitchElem = null;
 var gain_value = 2.5;
+var estimateCount = 100;
+
+function mode(array){
+    var array_length, count, i, max, value;
+    array_length = array.length;
+    count = [];
+    for (i = 0; i < array_length; i++) {
+        if (count[array[i]]) {
+            count[array[i]] ++;
+        } else {
+            count[array[i]] = 1;
+        }
+    }
+    max = 0;
+    for (i = 0; i < count.length; i++) {
+        if (count[i] > max) {
+            max = count[i];
+            value = i;
+        }
+    }
+    return value;
+}
 
 function initialize(){
 
@@ -57,11 +81,13 @@ function initialize(){
 	audioElement = document.getElementById("audio");
 	frequencyElement = document.getElementById("frequency");
 	timeDomainElement = document.getElementById("timedomain");
+	nsdfElement = document.getElementById("nsdf");
 	pitchExtentElem = document.getElementById( "pitch_extent" );
 	pitchElem = document.getElementById( "pitch" );
 
 	frequencyContext = frequencyElement.getContext("2d");
 	timeDomainContext = timeDomainElement.getContext("2d");
+	nsdfContext = nsdfElement.getContext("2d");
 
 	YINDetector = PitchFinder.YIN({sampleRate : 48000});
 	DWDetector = PitchFinder.DW({sampleRate : 48000, bufferSize : 2048});
@@ -74,6 +100,8 @@ function initialize(){
 	frequencyElement.height = height;
 	timeDomainElement.width = width;
 	timeDomainElement.height = height;
+	nsdfElement.width = width;
+	nsdfElement.height = height;
 
 	pianoCanvas1 = PIANOCANVAS1.getContext("2d");
 	pianoCanvas1.strokeStyle = "black";
@@ -168,6 +196,7 @@ function updatePitch() {
 	var float32Array = new Float32Array(2048);
 
 	var animation = function(){
+		var noteArray = [estimateCount];
 
 		analyser.getByteFrequencyData(frequencyData);
 		analyser.getByteTimeDomainData(timeDomainData);
@@ -189,7 +218,11 @@ function updatePitch() {
 		}
 		timeDomainContext.stroke();
 
+		nsdfContext.clearRect(0, 0, width, height);
+		nsdfContext.stroke();
+
 		var algo = document.querySelector('input[name="algo"]:checked').value;
+
 		if (algo =='YIN'){
 			estimate = YINDetector(float32Array);
 		}
@@ -202,8 +235,13 @@ function updatePitch() {
 
 		var freq = estimate.freq;
 
-		var note = noteFromPitch(freq);
-		console.log(freq);
+		var noteValue = noteFromPitch(freq);
+
+		if (noteArray.length >= estimateCount){
+			noteArray.shift();
+		}
+		noteArray.push(noteValue);
+		var note = mode(noteArray);
 
 		if (note>=33 && note <=121) {  // This draws the outputed tones
 
@@ -281,6 +319,17 @@ function updatePitch() {
 			}
 
 			prevNote = note;
+		}
+
+		if (algo == 'MPM'){
+			var nsdf = estimate.nsdf;
+			nsdfContext.clearRect(0, 0, width, height);
+			nsdfContext.beginPath();
+			nsdfContext.moveTo(0, (nsdf[0] -1.0) * -128);
+			for (var i = 1, l = nsdf.length ; i < l; i++) {
+				nsdfContext.lineTo(i, (nsdf[i] -1.0 )*(-128));
+			}
+			nsdfContext.stroke();
 		}
 
 		requestAnimationFrame(animation);

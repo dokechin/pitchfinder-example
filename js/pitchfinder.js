@@ -422,6 +422,10 @@ var PitchFinder = {};
         var d,
             distances = [];
 
+        for (var i=0; i< curSamNb;i++){
+          distances[i] = 0;
+        }
+
         for (var i = 0; i < nbMins; i++) {
           for (var j = 1; j < differenceLevelsN; j++) {
             if (i+j < nbMins) {
@@ -611,7 +615,7 @@ var PitchFinder = {};
           nsdfc = nsdf[tau + 1],
           bValue = tau,
           bottom = nsdfc + nsdfa - 0.5 * nsdfb;
-      if (bottom == 0) {
+      if (bottom === 0) {
         turningPointX = bValue;
         turningPointY = nsdfb;
       } else {
@@ -660,7 +664,7 @@ var PitchFinder = {};
             curMaxPos = 0; // clear the maximum position, so we start
             // looking for a new ones
           }
-          while (pos < (nsdf.length - 1) && nsdf[pos] <= 0) {
+          while (pos < nsdf.length - 1 && nsdf[pos] <= 0) {
             pos++; // loop over all the values below zero
           }
         }
@@ -683,13 +687,12 @@ var PitchFinder = {};
       // 2. Peak picking time: time to pick some peaks.
       peakPicking();
 
-      var highestAmplitude = -100;
+      var highestAmplitude = -Infinity;
 
-      console.log("step1 (" + maxPositions.length);
       for (var i = 0; i < maxPositions.length; i++) {
-        var tau = maxPositions[i];
+        tau = maxPositions[i];
         // make sure every annotation has a probability attached
-        highestAmplitude = (highestAmplitude < nsdf[tau]) ? nsdf[tau] : highestAmplitude;
+        highestAmplitude = Math.max(highestAmplitude, nsdf[tau]);
 
         if (nsdf[tau] > SMALL_CUTOFF) {
           // calculates turningPointX and Y
@@ -698,11 +701,9 @@ var PitchFinder = {};
           ampEstimates.push(turningPointY);
           periodEstimates.push(turningPointX);
           // remember the highest amplitude
-
-          highestAmplitude = (highestAmplitude < turningPointY) ? turningPointY: highestAmplitude;
+          highestAmplitude = Math.max(highestAmplitude, turningPointY);
         }
       }
-
 
       if (periodEstimates.length) {
         // use the overall maximum to calculate a cutoff.
@@ -711,10 +712,6 @@ var PitchFinder = {};
         var actualCutoff = cutoff * highestAmplitude,
             periodIndex = 0;
 
-        console.log("actualCutoff" + actualCutoff);
-        console.log("cutoff" + cutoff);
-        console.log("highestAmplitude" + highestAmplitude);
-
         for (var i = 0; i < ampEstimates.length; i++) {
           if (ampEstimates[i] >= actualCutoff) {
             periodIndex = i;
@@ -722,15 +719,8 @@ var PitchFinder = {};
           }
         }
 
-
         var period = periodEstimates[periodIndex],
             pitchEstimate = sampleRate / period;
-
-        console.log("periodIndex" + periodIndex);
-        console.log("ampEstimates.length" + ampEstimates.length);
-        console.log("period" + period);
-        console.log("sampleRate" + sampleRate);
-        console.log("pitchEstimate" + pitchEstimate);
 
         if (pitchEstimate > LOWER_PITCH_CUTOFF) {
           pitch = pitchEstimate;
@@ -745,6 +735,7 @@ var PitchFinder = {};
 
       result.probability = highestAmplitude;
       result.freq = pitch;
+      result.nsdf = nsdf;
       return result;
     };
   };
