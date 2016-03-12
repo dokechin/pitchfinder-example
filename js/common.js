@@ -367,6 +367,9 @@ function changeSourceOsi(){
 	window.cancelAnimationFrame( rafID );
 
 	sourceNode = audioContext.createOscillator();
+    var pitch = document.querySelector('input[name="pitch"]').value;
+    sourceNode.frequency.value = pitch; 
+ 
 	analyser = audioContext.createAnalyser();
 	sourceNode.connect(analyser);
 	sourceNode.start(0);
