@@ -23,6 +23,7 @@
 <canvas id="timedomain"></canvas>
 <canvas id="frequency"></canvas>
 <canvas id="nsdf"></canvas>
+<canvas id="replay"></canvas>
 
 <div>
   <input type="button" name="source" value="mic" onclick="changeSourceMic();"> Microfone
@@ -43,7 +44,13 @@
  <div><span id="pitch">Hello.</span></div>
  <div><span id="pitch_extent">Try your best pitch extent.</span></div>
 </div>
-
+<div>
+<input type="button" name="record" value="record MPM nsdf" onclick="record();">
+<input type="button" name="stop" value="stop recording" onclick="stop();">
+<input type="text" name="freq">
+<input type="button" name="prev" value="prev" onclick="prev();">
+<input type="button" name="next" value="next" onclick="next();">
+</div>
 <div id="piano">
   <canvas id="piano1" width="1024" height="256"></canvas>
   <canvas id="piano2" width="1024" height="256"></canvas>

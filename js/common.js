@@ -2,6 +2,11 @@ navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia 
 window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext;
 
+var recording = false;
+var replayData = [];
+var replay_index = 0;
+var record_interval = 0;
+
 var width = 1023;
 var height = 256;
 
@@ -38,6 +43,7 @@ var	frequencyContext = null;
 var	timeDomainContext = null;
 var	nsdfContext = null;
 var estimate = null;
+var replayContext = null;
 
 var	audioElement = null;
 var	frequencyElement = null;
@@ -45,6 +51,7 @@ var	timeDomainElement = null;
 var	nsdfElement = null;
 var	pitchExtentElem = null;
 var	pitchElem = null;
+var replayElem = null;
 var gain_value = 2.5;
 var estimateCount = 100;
 
@@ -84,10 +91,12 @@ function initialize(){
 	nsdfElement = document.getElementById("nsdf");
 	pitchExtentElem = document.getElementById( "pitch_extent" );
 	pitchElem = document.getElementById( "pitch" );
+	replayElem = document.getElementById( "replay" );
 
 	frequencyContext = frequencyElement.getContext("2d");
 	timeDomainContext = timeDomainElement.getContext("2d");
 	nsdfContext = nsdfElement.getContext("2d");
+	replayContext = replayElem.getContext("2d");
 
 	YINDetector = PitchFinder.YIN({sampleRate : 48000});
 	DWDetector = PitchFinder.DW({sampleRate : 48000, bufferSize : 2048});
@@ -102,6 +111,8 @@ function initialize(){
 	timeDomainElement.height = height;
 	nsdfElement.width = width;
 	nsdfElement.height = height;
+	replayElem.width = width;
+	replayElem.height = height;
 
 	pianoCanvas1 = PIANOCANVAS1.getContext("2d");
 	pianoCanvas1.strokeStyle = "black";
@@ -237,11 +248,7 @@ function updatePitch() {
 
 		var noteValue = noteFromPitch(freq);
 
-		if (noteArray.length >= estimateCount){
-			noteArray.shift();
-		}
-		noteArray.push(noteValue);
-		var note = mode(noteArray);
+		var note = noteValue;
 
 		if (note>=33 && note <=121) {  // This draws the outputed tones
 
@@ -319,17 +326,28 @@ function updatePitch() {
 			}
 
 			prevNote = note;
-		}
 
-		if (algo == 'MPM'){
-			var nsdf = estimate.nsdf;
-			nsdfContext.clearRect(0, 0, width, height);
-			nsdfContext.beginPath();
-			nsdfContext.moveTo(0, (nsdf[0] -1.0) * -128);
-			for (var i = 1, l = nsdf.length ; i < l; i++) {
-				nsdfContext.lineTo(i, (nsdf[i] -1.0 )*(-128));
+			if (algo == 'MPM'){
+				var nsdf = estimate.nsdf;
+				nsdfContext.clearRect(0, 0, width, height);
+				nsdfContext.beginPath();
+				nsdfContext.moveTo(0, (nsdf[0] -1.0) * -128);
+				for (var i = 1, l = nsdf.length ; i < l; i++) {
+					nsdfContext.lineTo(i, (nsdf[i] -1.0 )*(-128));
+				}
+				nsdfContext.stroke();
+				if (recording == true && record_interval >= 10){
+					var copy = [];
+					for (var k=0;k<nsdf.length;k++){
+						copy.push(nsdf[k]);
+					}
+					replayData.push({note : octer[oct] + noteString, nsdf : copy});
+					record_interval = 0;
+					console.log(replayData.length);
+				}
+				record_interval++;
 			}
-			nsdfContext.stroke();
+
 		}
 
 		requestAnimationFrame(animation);
@@ -375,6 +393,42 @@ function changeSourceOsi(){
 	sourceNode.start(0);
 	analyser.connect( audioContext.destination );
 	updatePitch();
+}
+function record(){
+	console.log("record start");
+	recording = true;
+	replayData = [];
+	replay_index = 0;
+}
+function stop(){
+	console.log("record stop");
+	recording = false;
+}
+function replay_nsdf(){
+
+	var nsdf_replay = replayData[replay_index].nsdf;
+    document.querySelector('input[name="freq"]').value = replayData[replay_index].note;
+
+	replayContext.clearRect(0, 0, width, height);
+	replayContext.beginPath();
+	replayContext.moveTo(0, (replay_nsdf[0] -1.0) * -128);
+	for (var i = 1, l = nsdf_replay.length ; i < l; i++) {
+		replayContext.lineTo(i, (nsdf_replay[i] -1.0 )*(-128));
+		console.log("nsdf[" + i + "]=" +nsdf_replay[i]);
+	}
+	replayContext.stroke();
+}
+function next(){
+	if ( replay_index < replayData.length -1 ){
+		replay_index++;
+	}
+	replay_nsdf();
+}
+function prev(){
+	if (replay_index > 0){
+		replay_index--;
+	}
+	replay_nsdf();
 }
 
 window.addEventListener("load", initialize, false);

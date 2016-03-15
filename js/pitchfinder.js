@@ -657,14 +657,14 @@ var PitchFinder = {};
         }
         pos++;
         // a negative zero crossing
-        if (pos < nsdf.length - 1 && nsdf[pos] <= 0) {
+        if (pos < (nsdf.length - 1) && nsdf[pos] <= 0) {
           // if there was a maximum add it to the list of maxima
           if (curMaxPos > 0) {
             maxPositions.push(curMaxPos);
             curMaxPos = 0; // clear the maximum position, so we start
             // looking for a new ones
           }
-          while (pos < nsdf.length - 1 && nsdf[pos] <= 0) {
+          while (pos < (nsdf.length - 1) && nsdf[pos] <= 0) {
             pos++; // loop over all the values below zero
           }
         }
