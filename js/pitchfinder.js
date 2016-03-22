@@ -739,4 +739,120 @@ var PitchFinder = {};
       return result;
     };
   };
+
+  // 
+  // ymstk method http://jsdo.it/ymstk/zYXW
+  pf.YMSTK = function(config) {
+
+    config = config || {};
+
+        /**
+         * The expected size of an audio buffer (in samples).
+         */
+    var DEFAULT_BUFFER_SIZE = 1024,
+        DEFAULT_SAMPLE_RATE = 44100,
+        FFT_SIZE = 2048,
+        /**
+         * The audio sample rate. Most audio has a sample rate of 44.1kHz.
+         */
+        sampleRate = config.sampleRate || DEFAULT_SAMPLE_RATE,
+        /**
+         * Size of the input buffer.
+         */
+        bufferSize = config.bufferSize || DEFAULT_BUFFER_SIZE,
+        baseFreq = 442,
+        minNoteOffset = -36,
+        maxNoteOffset = 24,
+        noteList = [],
+        result = {};
+    
+    for (var i= minNoteOffset; i<= maxNoteOffset; i++){
+      var noteInfo = {
+        "noteOffset": i,
+        "freq" : baseFreq * Math.pow(2.0, i/12),
+        "valule" : 0.0,
+        "posValue": 0.0,
+        "negValue": 0.0
+      };
+      noteList.push(noteInfo);
+    }
+
+    return function(float32AudioBuffer) {
+
+      for( i=0;i< float32AudioBuffer.length;i++){
+        float32AudioBuffer[i] = Math.pow(10.0, 5.0 +0.05 *  float32AudioBuffer[i]);
+      }
+
+      var getFreqComponentValue = function(freq) {
+        var idxF = (freq * FFT_SIZE) / sampleRate;
+        var idx0 = Math.floor(idxF);
+        var idx1 = idx0 + 1;
+        if( idx1 >= float32AudioBuffer.length ) return 0.0;
+        return (idx1 - idxF) * float32AudioBuffer[idx0] + (idxF - idx0) * float32AudioBuffer[idx1];
+      };
+
+      for (i=0;i<noteList.length;i++){
+        noteList[i].posValue = 0.0;
+        noteList[i].negValue = 0.0;
+        var coeffMax = 20000 / noteList[i].freq;
+        for (var coeff= 1; coeff< coeffMax; coeff++){
+          noteList[i].posValue += getFreqComponentValue(coeff * noteList[i].freq);
+          for( var subCoeff = 0.1; subCoeff <= 0.9; subCoeff += 0.1 ) {
+            noteList[i].negValue += getFreqComponentValue((coeff - subCoeff) * noteList[i].freq) * 0.1;
+          }
+        }
+        noteList[i].value = noteList[i].posValue - noteList[i].negValue;
+      }
+      var maximalNoteList = [];
+      var maximalValue = -Infinity;
+      for( i = 1; i < noteList.length - 1; i++ ) {
+        if( noteList[i - 1].value <= noteList[i].value && noteList[i].value >= noteList[i + 1].value ) {
+          maximalNoteList.push(noteList[i]);
+          if( noteList[i].posValue > maximalValue ) {
+            maximalValue = noteList[i].value;
+          }
+        }
+      }
+      if( maximalNoteList.length === 0 ) {
+        var lastNote = noteList[noteList.length - 2];
+        if( lastNote.value > maximalValue ) {
+          maximalNoteList.push(lastNote);
+          maximalValue = lastNote.value;
+        } else {
+          maximalNoteList.push(noteList[1]);
+          maximalValue = noteList[1].value;
+        }
+      }
+      // ある程度強い極大値だけを残して強い順に並べ替え
+      var strongNoteList = [];
+      if( maximalValue >= 0 ) {
+        for( i = 0; i < maximalNoteList.length; i++ ) {
+          if( maximalNoteList[i].value >= maximalValue * 0.99 ) {
+            strongNoteList.push(maximalNoteList[i]);
+          }
+        }
+      } else {
+        strongNoteList = maximalNoteList.concat();
+      }
+      var sortFunc = function(a, b) {
+        return b.value - a.value;
+      };
+      strongNoteList.sort(sortFunc);
+                
+      // 最も強い音を倍音に持つ音のうち一番低い音を採用する
+      var currentNote = strongNoteList[0];
+      for( i = 1; i < strongNoteList.length; i++ ) {
+        var noteDistance = strongNoteList[0].noteOffset - strongNoteList[i].noteOffset;
+        if( noteDistance == 12 || noteDistance == 19 || noteDistance == 24 ) {
+          if( strongNoteList[i].noteOffset < currentNote.noteOffset ) {
+            currentNote = strongNoteList[i];
+          }
+        }
+      }
+
+      result.freq = currentNote.freq;
+      return result;
+    };
+  };
+
 })(PitchFinder);

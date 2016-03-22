@@ -5,7 +5,6 @@ window.AudioContext = window.AudioContext || window.webkitAudioContext || window
 var recording = false;
 var replayData = [];
 var replay_index = 0;
-var record_interval = 0;
 
 var width = 1023;
 var height = 256;
@@ -101,6 +100,7 @@ function initialize(){
 	YINDetector = PitchFinder.YIN({sampleRate : 48000});
 	DWDetector = PitchFinder.DW({sampleRate : 48000, bufferSize : 2048});
 	MPMDetector = PitchFinder.MPM({sampleRate : 48000, bufferSize : 2048});
+	YMSTKDetector = PitchFinder.YMSTK({sampleRate : 48000, bufferSize : 2048});
 
 	PIANOCANVAS1 = document.getElementById( "piano1" );
 	PIANOCANVAS2 = document.getElementById( "piano2" );
@@ -205,6 +205,7 @@ function updatePitch() {
 	var frequencyData = new Uint8Array(analyser.frequencyBinCount);
 	var timeDomainData = new Uint8Array(analyser.frequencyBinCount);
 	var float32Array = new Float32Array(2048);
+	var float32FrequencyData = new Float32Array(analyser.frequencyBinCount);
 
 	var animation = function(){
 		var noteArray = [estimateCount];
@@ -212,6 +213,7 @@ function updatePitch() {
 		analyser.getByteFrequencyData(frequencyData);
 		analyser.getByteTimeDomainData(timeDomainData);
 		analyser.getFloatTimeDomainData(float32Array);
+		analyser.getFloatFrequencyData(float32FrequencyData);
 
 		frequencyContext.clearRect(0, 0, width, height);
 		frequencyContext.beginPath();
@@ -242,6 +244,9 @@ function updatePitch() {
 		}
 		if (algo == 'MPM'){
 			estimate = MPMDetector(float32Array);
+		}
+		if (algo == 'YMSTK'){
+			estimate = YMSTKDetector(float32FrequencyData);
 		}
 
 		var freq = estimate.freq;
@@ -336,16 +341,14 @@ function updatePitch() {
 					nsdfContext.lineTo(i, (nsdf[i] -1.0 )*(-128));
 				}
 				nsdfContext.stroke();
-				if (recording == true && record_interval >= 10){
+				if (recording == true){
 					var copy = [];
 					for (var k=0;k<nsdf.length;k++){
 						copy.push(nsdf[k]);
 					}
 					replayData.push({note : octer[oct] + noteString, nsdf : copy});
-					record_interval = 0;
 					console.log(replayData.length);
 				}
-				record_interval++;
 			}
 
 		}
